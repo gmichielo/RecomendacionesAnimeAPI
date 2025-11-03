@@ -282,10 +282,11 @@ while accion_usuario != 0 and DAO_logins!= None and DAO_logins.get_conexion() ==
         accion_usuario = 0
         accion_usuario_anime = 1
 
-print(f"\n\033[32mCargando algoritmo...\033[0m")
-print(goku)
-# Entrenar (solo la primera vez)
-resp = req.post(f"{BASE_URL}/entrenar")
+if DAO_logins.get_conexion() == True:
+    # Entrenar (solo la primera vez)
+    resp = req.post(f"{BASE_URL}/entrenar")
+    print(f"\n\033[32mCargando algoritmo...\033[0m")
+    print(goku)
 
 ###     Seccion Recomendaciones
 while accion_usuario_anime != 0 and DAO_logins!= None and DAO_logins.get_conexion() == True:

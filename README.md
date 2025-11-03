@@ -20,17 +20,13 @@ Asegúrate de tener instalado:
 - Las siguientes librerias (Instálalas con: pip install + nombre de la libreria):
    - flask 
    - mysql-connector-python
-   - pickle
    - pandas
    - numpy
-   - os
-   - html
-   - random
 
 ## Pasos a seguir:
-0. Obtener y clonar el Repositorio para luego ubicarte en la rama Vers_conAPI
+0. Obtener y clonar el Repositorio para luego ubicarte en la rama main
 
-1. Descarga el DAO de la base de datos correspondiente (logins_api_anime) y guárdalo en tu MySQL. (Carpeta de Documentos)
+1. Descarga el DUMP de la base de datos correspondiente (BD = logins_api_anime) y ejecutalo en tu MySQL Workbench (Carpeta de Documentos: logins_users_recomendaciones_animes)
 
 2. Ejecuta el API_RecomendacionesAnimes.py en la consola. Asegúrate de estar en la misma carpeta donde se encuentra el archivo API_RecomendacionesAnimes.py. (O abrirlo y ejecutarlo)
     Utiliza el siguiente comando en la consola para arrancar la API:
@@ -40,9 +36,9 @@ Asegúrate de tener instalado:
 
 4. Sigue las instrucciones del main.
 
-<Aclaración #1>: Por razones de los software utlizados de primero debes iniciar sesion en la base de datos de MySQL y luego hacer el registro con el login normal
+<Aclaración #1>: Por razones de los software utlizados de primero debes iniciar sesion en la base de datos de MySQL y luego hacer el registro/inicio de sesion con el login normal
 
-<Aclaración #2>: Seguramente la primera vez que ejecutes el algoritmo tarde un poco por crearse el modelo aproximadamente de 4 a 5 minutos el resto de veces es apenas en segundos
+<Aclaración #2>: Seguramente la primera vez que ejecutes el algoritmo tarde un poco por crearse el modelo aproximadamente de 4 a 5 minutos, con el modelo ya cargado el resto de veces es apenas en segundos
 
 5. Una vez hayas terminado, vuelve a la terminal donde está corriendo el API_RecomendacionesAnimes.py y presiona Ctrl + C para detener la ejecución de la API.
 
