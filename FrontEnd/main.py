@@ -290,7 +290,9 @@ if DAO_logins.get_conexion() == True:
 
 ###     Seccion Recomendaciones
 while accion_usuario_anime != 0 and DAO_logins!= None and DAO_logins.get_conexion() == True:
-    print("\nOpciones:")
+    print("\n\033[95m╔══════════════════════════════════════╗")
+    print("║            MENU OPCIONES             ║")
+    print("╚══════════════════════════════════════╝\033[0m")
     print(mostrar_menu_acciones_animes())
     
     try:
@@ -323,9 +325,10 @@ while accion_usuario_anime != 0 and DAO_logins!= None and DAO_logins.get_conexio
                 print("\033[31mOpción inválida, seleccione un número del menu.\033[0m")
                 continue
 
-            if accion_usuario_recomendacion == 1:
-                print("\nAlgunas recomendaciones aleatorias")
-
+            if accion_usuario_recomendacion == 1: 
+                print("\n\033[95m╔═══════════════════════════════════════╗")
+                print("║       Recomendaciones Aleatorias      ║")
+                print("╚═══════════════════════════════════════╝\033[0m")
                 resp = req.get(f"{BASE_URL}/animes")
                 animes = resp.json()["animes"]
                 print(mostrar_lista_animes(animes))
@@ -341,6 +344,9 @@ while accion_usuario_anime != 0 and DAO_logins!= None and DAO_logins.get_conexio
                 resp_recom = req.post(f"{BASE_URL}/recomendar", json=user_test_ratings)
 
                 if resp_recom.status_code == 200:
+                    print("\n\033[95m╔═════════════════════════════════════════════╗")
+                    print("║       Recomendaciones para el ususario      ║")
+                    print("╚═════════════════════════════════════════════╝\033[0m")
                     data = resp_recom.json()
                     print(mostrar_lista_recomendaciones(data))
             
