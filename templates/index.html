@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>OtakuDB — Recomendador de Animes</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/fuse.js@7.0.0"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Roboto+Condensed:wght@400;700&display=swap');
+
+    :root {
+      --bg: #0b0d11;
+      --card: #15181f;
+      --accent: #00b4d8;
+      --accent2: #f94144;
+      --text: #e9ecef;
+      --muted: #cdd9e5;
+    }
+
+    body {
+      background: radial-gradient(circle at 20% 30%, #111317 0%, #050608 80%);
+      color: var(--text);
+      font-family: 'Roboto Condensed', sans-serif;
+      overflow-x: hidden;
+    }
+
+    .title {
+      font-family: 'Orbitron', sans-serif;
+      color: var(--accent);
+      text-align: center;
+      margin-bottom: 1.5rem;
+      text-shadow: 0 0 10px rgba(0,180,216,0.5);
+    }
+
+    .container {
+      max-width: 950px;
+      background: rgba(21, 24, 31, 0.9);
+      border-radius: 12px;
+      box-shadow: 0 0 20px rgba(0,180,216,0.1);
+      padding: 2rem 3rem;
+      margin-top: 4%;
+    }
+
+    .btn-main {
+      background: var(--accent);
+      border: none;
+      color: #000;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    .btn-main:hover {
+      background: var(--accent2);
+      color: #fff;
+      transform: scale(1.03);
+    }
+
+    input {
+      background: #11151b;
+      color: var(--text);
+      border: 1px solid #222;
+    }
+    input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 4px var(--accent);
+    }
+
+    .anime-list {
+      background: #0e1117;
+      border-radius: 8px;
+      padding: 1rem;
+      height: 320px;
+      overflow-y: auto;
+    }
+
+    .anime-card {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      padding: 0.6rem 0;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .anime-card:hover {
+      background: rgba(0,180,216,0.08);
+      transform: scale(1.01);
+    }
+    .anime-card img {
+      width: 50px;
+      height: 70px;
+      object-fit: cover;
+      border-radius: 4px;
+      box-shadow: 0 0 6px rgba(0,0,0,0.4);
+      opacity: 0;
+      transition: opacity 0.4s ease-in;
+    }
+    .anime-card img.loaded { opacity: 1; }
+
+    #resultados .card {
+      background: #0e1117;
+      border: 1px solid rgba(255,255,255,0.08);
+      color: var(--text);
+      border-radius: 10px;
+      margin-bottom: 10px;
+    }
+    #resultados .card img {
+      width: 60px;
+      height: 85px;
+      border-radius: 6px;
+      object-fit: cover;
+      opacity: 0;
+      transition: opacity 0.4s ease-in;
+    }
+    #resultados .card img.loaded { opacity: 1; }
+
+    .score-badge {
+      font-size: 1.6rem;
+      font-weight: 700;
+      border-radius: 8px;
+      padding: 4px 12px;
+      color: #fff;
+      display: inline-block;
+      text-shadow: 0 0 8px rgba(0, 0, 0, 0.5);
+      background: linear-gradient(135deg, #00b4d8 0%, #0077b6 100%);
+      box-shadow: 0 0 10px rgba(0,180,216,0.4);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .score-badge:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 20px rgba(0,180,216,0.8);
+    }
+    .score-high {
+      background: linear-gradient(135deg, #06d6a0 0%, #118ab2 100%);
+    }
+    .score-mid {
+      background: linear-gradient(135deg, #ffd166 0%, #ef476f 100%);
+    }
+    .score-low {
+      background: linear-gradient(135deg, #ef476f 0%, #8d0801 100%);
+    }
+
+    .small-text {
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+
+    .text-muted {
+      color: #cdd9e5 !important;
+    }
+
+    /* Loader */
+    .anime-loader {
+      width: 160px;
+      height: 160px;
+      object-fit: contain;
+      filter: drop-shadow(0 0 10px rgba(0,180,216,0.5));
+      animation: floaty 2s ease-in-out infinite;
+    }
+    @keyframes floaty {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+
+    footer {
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-top: 2rem;
+    }
+    footer span { color: var(--accent); }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1 class="title">OTAKU<span style="color:#f94144;">DB</span></h1>
+
+    <!-- LOGIN -->
+    <div id="login-section">
+      <p class="text-muted mb-3">👋 Inicia sesión para entrar al mundo otaku.</p>
+      <input type="text" id="usuario" class="form-control mb-2" placeholder="Usuario (Ej: Goku)">
+      <input type="password" id="password" class="form-control mb-3" placeholder="Contraseña (Ej: Kamehameha!)">
+      <button id="btn-login" class="btn btn-main w-100 mb-3">Entrar</button>
+      <button id="btn-register" class="btn btn-outline-light w-100">Registrarse</button>
+    </div>
+
+    <!-- RECOMENDADOR -->
+    <div id="recomendador-section" style="display:none;">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <button id="btn-train" class="btn btn-outline-light btn-sm">🧠 Entrenar modelo</button>
+        <button id="btn-refresh" class="btn btn-outline-light btn-sm">🔄 Actualizar lista</button>
+      </div>
+
+      <input type="text" id="anime-search" class="form-control mb-3" placeholder="🔍 Buscar anime por nombre...">
+
+      <div id="alert-box" class="mb-3"></div>
+
+      <!-- Loader -->
+      <div id="loader" class="text-center my-3" style="display:none;">
+        <img id="loader-img" src="/static/gif/entrenando.gif" alt="Cargando..." class="anime-loader">
+        <p class="small-text mt-2">Cargando el poder del anime... 🔥</p>
+      </div>
+
+      <div class="anime-list" id="lista-animes">Cargando animes...</div>
+
+      <div class="row g-2 mb-3">
+        <div class="col-md-6">
+          <input type="number" id="anime-id" class="form-control" placeholder="ID del anime">
+        </div>
+        <div class="col-md-6">
+          <input type="number" id="anime-rating" class="form-control" placeholder="Calificación (1-10)">
+        </div>
+      </div>
+
+      <button id="btn-add" class="btn btn-main w-100 mb-3">➕ Agregar Calificación</button>
+      <button id="btn-recomendar" class="btn btn-success w-100">✨ Obtener Recomendaciones</button>
+
+      <hr class="my-4 border-secondary">
+      <div id="resultados"></div>
+    </div>
+  </div>
+
+  <footer>
+    <p>🌸 “Un verdadero héroe siempre llega tarde.” — <span>Saitama</span></p>
+  </footer>
+
+  <script>
+    const BASE_URL = "http://localhost:5000";
+    const userRatings = {};
+    let allAnimes = [];
+    const $ = id => document.getElementById(id);
+
+    function showAlert(msg, type = "info") {
+      $("alert-box").innerHTML = `<div class="alert alert-${type}" role="alert">${msg}</div>`;
+      setTimeout(() => $("alert-box").innerHTML = "", 4000);
+    }
+
+    // Loader con GIFs
+    function showLoader(msg = "Cargando el poder del anime... 🔥", type = "default") {
+      const loader = $("loader");
+      const img = $("loader-img");
+      loader.style.display = "block";
+      loader.querySelector("p").textContent = msg;
+
+      if (type === "train") {
+        img.src = "/static/gif/entrenando.gif";
+      } else if (type === "recommend") {
+        img.src = "/static/gif/goku.gif";
+      } else {
+        img.src = "/static/gif/entrenando.gif";
+      }
+    }
+
+    function hideLoader() { $("loader").style.display = "none"; }
+
+    // Cache de imágenes
+    const animeCache = new Map();
+
+    async function fetchAnimeImage(name) {
+      if (animeCache.has(name)) return animeCache.get(name);
+      const fallback = {
+        img: "/static/gif/noimage.png",
+        synopsis: "Sin sinopsis disponible.",
+        score: "N/A"
+      };
+
+      try {
+        const cleanName = name.replace(/\(.*?\)|\[.*?\]|[^a-zA-Z0-9\s]/g, " ").split(" ").slice(0, 5).join(" ");
+        const r = await fetch(`https://api.jikan.moe/v4/anime?q=${encodeURIComponent(cleanName)}&limit=3`);
+        const data = await r.json();
+        if (!data.data?.length) { animeCache.set(name, fallback); return fallback; }
+        const info = data.data.reduce((a, b) =>
+          Math.abs(b.title.length - cleanName.length) < Math.abs(a.title.length - cleanName.length) ? b : a
+        );
+        const result = {
+          img: info.images?.jpg?.image_url || fallback.img,
+          synopsis: info.synopsis ? info.synopsis.slice(0, 120) + "..." : fallback.synopsis,
+          score: info.score || fallback.score
+        };
+        animeCache.set(name, result);
+        return result;
+      } catch {
+        animeCache.set(name, fallback);
+        return fallback;
+      }
+    }
+
+    async function fetchAnimes() {
+      try {
+        showLoader("Buscando animes legendarios... 💫", "default");
+        const resp = await fetch(`${BASE_URL}/animes`);
+        if (!resp.ok) throw new Error("Error al obtener animes");
+        const data = await resp.json();
+        allAnimes = data.animes;
+        await renderAnimeList(allAnimes);
+      } catch {
+        $("lista-animes").innerHTML = `<span class="text-danger">❌ Aún no se ha entrenado el modelo.</span>`;
+      } finally {
+        hideLoader();
+      }
+    }
+
+    async function renderAnimeList(list) {
+      $("lista-animes").innerHTML = "";
+      let html = "";
+      for (const [id, name] of list.slice(0, 25)) {
+        const { img, score } = await fetchAnimeImage(name);
+        html += `
+          <div class="anime-card" data-id="${id}">
+            <img src="${img}" alt="${name}" onload="this.classList.add('loaded')">
+            <div>
+              <strong>${name}</strong><br>
+              <span class="small-text">ID: ${id} | Score: ${score}</span>
+            </div>
+          </div>`;
+      }
+      $("lista-animes").innerHTML = html;
+    }
+
+    $("btn-login").addEventListener("click", async () => {
+      $("login-section").style.display = "none";
+      $("recomendador-section").style.display = "block";
+      await fetchAnimes();
+    });
+
+    $("btn-refresh").addEventListener("click", fetchAnimes);
+
+    $("anime-search").addEventListener("input", e => {
+      const term = e.target.value.toLowerCase().trim();
+      if (!term) return renderAnimeList(allAnimes.slice(0, 25));
+      const fuse = new Fuse(allAnimes, { keys: ["1"], threshold: 0.4 });
+      const results = fuse.search(term).map(r => r.item);
+      renderAnimeList(results.slice(0, 25));
+    });
+
+    $("btn-add").addEventListener("click", () => {
+      const id = $("anime-id").value.trim();
+      const rating = $("anime-rating").value.trim();
+      if (!id || !rating) return showAlert("Completa ambos campos", "warning");
+      userRatings[id] = parseInt(rating);
+      showAlert(`Anime ${id} calificado con ${rating}/10 🍙`, "success");
+      $("anime-id").value = "";
+      $("anime-rating").value = "";
+    });
+
+    $("btn-train").addEventListener("click", async () => {
+      showLoader("Entrenando el modelo... 🧠", "train");
+      try {
+        const resp = await fetch(`${BASE_URL}/entrenar?force=true`, { method: "POST" });
+        const data = await resp.json();
+        showAlert("✅ " + data.mensaje, "success");
+        $("resultados").innerHTML = "<p class='text-success'>Modelo entrenado correctamente.</p>";
+      } catch {
+        showAlert("❌ Error entrenando el modelo", "danger");
+      } finally { hideLoader(); }
+    });
+
+    $("btn-recomendar").addEventListener("click", async () => {
+      showLoader("Generando tus recomendaciones épicas... ⚡", "recommend");
+      const resp = await fetch(`${BASE_URL}/recomendar`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(userRatings)
+      });
+      const data = await resp.json();
+      hideLoader();
+
+      let html = "<h5 class='mb-3'>🔮 Tus Recomendaciones</h5>";
+      for (const [i, r] of data.recomendaciones_top_10.entries()) {
+        const info = await fetchAnimeImage(r.name);
+        html += `
+          <div class="card p-3 d-flex flex-row align-items-start gap-3">
+            <img src="${info.img}" alt="${r.name}" onload="this.classList.add('loaded')">
+            <div>
+              <h6 class="card-title mb-1">${i + 1}. ${r.name}</h6>
+              <div class="d-flex align-items-center gap-2 mb-2">
+                <span class="score-badge ${r.puntaje >= 8 ? 'score-high' : r.puntaje >= 5 ? 'score-mid' : 'score-low'}">
+                  ${r.puntaje.toFixed(2)}
+                </span>
+                <p class="small-text mb-0">⭐ Score global: ${info.score}</p>
+              </div>
+              <p class="small-text">${info.synopsis}</p>
+            </div>
+          </div>`;
+      }
+      $("resultados").innerHTML = html;
+      showAlert("Recomendaciones generadas ✨", "success");
+    });
+  </script>
+</body>
+</html>
