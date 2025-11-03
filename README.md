@@ -52,7 +52,6 @@ Asegúrate de tener instalado:
        - anime.csv
        - API_RecomendacionesAnimes.py
        - rating.csv
-    - Desktop (No importa no abrir)
     - Documentos
        - Diagramas_API_RecomendacionAnimes.png
        - logins_users_recomendaciones_animes.sql
