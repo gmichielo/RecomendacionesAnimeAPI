@@ -47,7 +47,7 @@ Asegúrate de tener instalado:
 5. Una vez hayas terminado, vuelve a la terminal donde está corriendo el API_RecomendacionesAnimes.py y presiona Ctrl + C para detener la ejecución de la API.
 
 ## Estrutura del proyecto:
-### Animes branch Vers_conAPI
+### RecomendacionesAnimeAPI branch Vers_conAPI
     - BackEnd
        - anime.csv
        - API_RecomendacionesAnimes.py
