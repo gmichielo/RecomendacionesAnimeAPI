@@ -48,6 +48,7 @@ usuario_AN = None
 contrasenya_AN = None
 
 conexion_establecida = False
+login_hecho = False
 
 ### Funciones nesesarias
 def clear(wait=2):
@@ -105,7 +106,7 @@ def pedir_calificacion(prompt: str) -> int:
 def verificacion_usuario_existente(user_buscar):
     indice_columna = 1
     for fila in usuarios:
-        if fila[indice_columna] == user_buscar:
+        if fila[indice_columna] == user_buscar.get_usuario():
             return True
     return False
 
@@ -234,6 +235,7 @@ while accion_usuario != 0 and DAO_logins!= None and DAO_logins.get_conexion() ==
             print ("\n\033[36mBienvenid@ al recomendador de animes 2000\033[0m")
             accion_usuario = 0
             accion_usuario_anime = 1
+            login_hecho = True
             
         else:
             print ("\n\033[31mHubo algun problema con los datos o no estas registrad@.\033[0m\n")
@@ -248,7 +250,7 @@ while accion_usuario != 0 and DAO_logins!= None and DAO_logins.get_conexion() ==
             (accion_nombre_registro.isdigit() 
             or not accion_nombre_registro.strip().isalnum())
             and indexErrors < CANTIDAD_ERRORES
-            or verificacion_usuario_existente(verificacion_usuario)
+            or verificacion_usuario_existente(verificacion_usuario) == True
             ):
             indexErrors += 1
             accion_nombre_registro = input("\033[31mNombre no válido, elige uno nuevo: \033[0m")
@@ -281,8 +283,9 @@ while accion_usuario != 0 and DAO_logins!= None and DAO_logins.get_conexion() ==
         print ("\n\033[36mBienvenid@ al recomendador de animes 2000\033[0m")
         accion_usuario = 0
         accion_usuario_anime = 1
+        login_hecho = True
 
-if DAO_logins.get_conexion() == True:
+if DAO_logins.get_conexion() == True and login_hecho == True:
     # Entrenar (solo la primera vez)
     resp = req.post(f"{BASE_URL}/entrenar")
     print(f"\n\033[32mCargando algoritmo...\033[0m")
