@@ -151,7 +151,7 @@ def mostrar_lista_animes(animes_lista):
         else:
             continue  # Ignora formatos desconocidos
 
-        out.append(f"{anime_id:>6} | {nombre:<40}")
+        out.append(f"{anime_id:>6} | {nombre:<40}") # El > significa que se alinea a la derecha y el 6 el ancho minimo (lo mismo para el <40 pero a la izquierda)
 
     return "\n".join(out)
 

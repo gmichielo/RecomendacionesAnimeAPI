@@ -130,11 +130,11 @@ def recomendar():
             return jsonify({"error": "Debes enviar un JSON con las calificaciones del usuario (anime_id: rating)"}), 400
 
         # Filtrar solo animes conocidos
-        available_ids = [int(aid) for aid in user_ratings.keys() if int(aid) in corrMatrix.columns]
+        available_ids = [int(aid) for aid in user_ratings.keys() if int(aid) in corrMatrix.columns] # El .key agarra las claves/id del diccioanrio, el int(aid) los transforma a int si son string y el final lo que hace es quedarse con los animes en las columnas del modelo  
         if not available_ids:
             return jsonify({"error": "Ninguno de los animes enviados está en el modelo"}), 400
 
-        myRatings = pd.Series({int(aid): user_ratings[str(aid)] for aid in available_ids})
+        myRatings = pd.Series({int(aid): user_ratings[str(aid)] for aid in available_ids}) #Construyendo un pd.Series a partir de los IDs validos del usuario y sus puntuaciones
 
         simCandidates = pd.Series(dtype='float64') # Creacion de serie vacia
         for anime_id, rating_value in myRatings.items():
