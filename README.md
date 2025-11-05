@@ -1,94 +1,126 @@
-API_RecomendacionesAnimes — Proyecto Python + Flask + MySQL
-============================================================
+# 🧠 API_RecomendacionesAnimes — Proyecto Python + Flask + MySQL
 
-API / Modelo de recomendación de animes con Python y MySQL
+## Descripción
+API / Modelo de recomendación de animes desarrollado con **Python**, **Flask** y **MySQL**.
 
-Un proyecto que combina una API en Flask que crea un modelo de recomendaciones de animes utilizando bases de datos .csv, junto con un programa principal en Python que permite al usuario obtener recomendaciones personalizadas.
-Además, incluye un sistema básico de logins conectado a una base de datos MySQL.
+El proyecto combina:
+- Una **API Flask** que crea y sirve un modelo de recomendaciones de animes basado en datos `.csv`.
+- Una **interfaz web** (HTML/JS) que permite:
+  - Conectarse a una base de datos MySQL.
+  - **Registrar** nuevos usuarios (con contraseñas cifradas mediante *bcrypt*).
+  - **Iniciar sesión** con validación real.
+  - Entrenar el modelo y obtener recomendaciones personalizadas desde el navegador.
 
-------------------------------------------------------------
-Autores
-------------------------------------------------------------
-- David López García
-- Gabriel
+## 👥 Autores
+- **David López García**
+- **Gabriel**
 
-------------------------------------------------------------
-Librerias utilizadas
-------------------------------------------------------------
-- Python
-- MySQL
-- API Flask
-- Pandas
-- Numpy
-- Bcrypt
+## ⚙️ Librerías utilizadas
+- **Python**
+- **Flask (API Web)**
+- **Flask-cors**
+- **MySQL Connector**
+- **Pandas**
+- **NumPy**
+- **Bcrypt**
+- **Bootstrap 5 (Frontend)**
+- **Fuse.js (buscador inteligente de animes)**
 
-------------------------------------------------------------
-Requisitos previos
-------------------------------------------------------------
-Asegúrate de tener instalado:
+## 🧩 Requisitos previos
 
-- Python 3.10 o superior
-- MySQL Server / MySQL Workbench
+### Aplicaciones necesarias
+- **Python 3.10+**
+- **MySQL Server / MySQL Workbench**
 
-Librerías necesarias (instálalas con PIP):
+### Librerías de Python
+Instálalas con:
 
-    pip install flask mysql-connector-python pandas numpy bcrypt
+```bash
+pip install flask flask-cors mysql-connector-python pandas numpy bcrypt
+```
 
-------------------------------------------------------------
-Pasos a seguir
-------------------------------------------------------------
-1. Clonar o descomprimir el repositorio.
-   Descarga el proyecto y ubícate en la rama principal (main) o la carpeta raíz.
+## 🚀 Pasos para ejecutar el proyecto
 
-2. Base de datos MySQL
-   - Descarga el dump de la base de datos:
-     logins_users_recomendaciones_animes.sql
-     (ubicado en la carpeta Documentos)
-   - Ejecútalo en MySQL Workbench para crear la base 'logins_api_anime'.
+### 1️⃣ Clonar o descomprimir el proyecto
+Descarga el repositorio o ZIP y colócalo en una carpeta local.
 
-3. Archivos CSV del modelo
-   - Descarga los datasets necesarios desde Google Drive:
-     https://drive.google.com/drive/folders/19-ttX4RteFSeT0RUCn4AvREzGHLW08ha?usp=drive_link
-   - Colócalos dentro de la carpeta BackEnd.
+### 2️⃣ Configurar la base de datos MySQL
+1. Abre **MySQL Workbench**.  
+2. Crea una base de datos llamada:
+   ```sql
+   CREATE DATABASE logins_api_anime;
+   USE logins_api_anime;
+   ```
+3. Crea la tabla de usuarios:
+   ```sql
+   CREATE TABLE usuario_contrasenyas (
+     idUsuario_contrasenya INT AUTO_INCREMENT PRIMARY KEY,
+     usuario VARCHAR(100) NOT NULL UNIQUE,
+     contrasenya VARCHAR(255) NOT NULL
+   );
+   ```
+4. (Opcional) Puedes importar el dump incluido en:
+   ```
+   Documentos/logins_users_recomendaciones_animes.sql
+   ```
 
-4. Iniciar la API Flask
-   Abre una terminal en la carpeta BackEnd y ejecuta:
+### 3️⃣ Colocar los archivos CSV del modelo
+Descarga los datasets desde Google Drive:
 
-       flask --app API_RecomendacionesAnimes run
+🔗 [Dataset de entrenamiento (anime.csv, rating.csv)](https://drive.google.com/drive/folders/19-ttX4RteFSeT0RUCn4AvREzGHLW08ha?usp=drive_link)
 
-   o alternativamente:
+Colócalos dentro de la carpeta:
+```
+BackEnd/
+```
 
-       python API_RecomendacionesAnimes.py
+### 4️⃣ Iniciar la API Flask
+Abre una terminal en la carpeta `BackEnd` y ejecuta:
 
-   Esto lanzará la API local en:
-       http://127.0.0.1:5000
+```bash
+flask --app API_RecomendacionesAnimes run
+```
+O alternativamente:
+```bash
+python API_RecomendacionesAnimes.py
+```
 
-5. Ejecutar el programa principal
-   Abre el archivo FrontEnd/main.py y ejecútalo en una terminal aparte:
+Esto levantará la aplicación en:
+👉 [http://127.0.0.1:5000](http://127.0.0.1:5000)
 
-       python FrontEnd/main.py
+### 5️⃣ Conectarte desde la interfaz web
+Abre en tu navegador:
+```
+http://127.0.0.1:5000
+```
+1. En la **pantalla inicial**, introduce tus credenciales MySQL:
+   - Host: `localhost`
+   - Usuario: `root`
+   - Contraseña: *(la tuya)*
+   - Base de datos: `logins_api_anime`
+2. Pulsa **“Conectar a MySQL”** → si la conexión es correcta, se habilitará el login.
 
-6. Iniciar sesión o registrarse
-   - Asegúrate de que MySQL esté iniciado y accesible.
-   - Usa el sistema de login del programa (usuario y contraseña base en Documentos/usuario_contrasenya_base.txt).
+### 6️⃣ Login y registro
+- Si ya tienes un usuario → inicia sesión.  
+- Si no → regístrate directamente desde la web.  
+  - Las contraseñas se guardan **encriptadas con bcrypt** en MySQL.
+  - Verás mensajes visuales de éxito o error en pantalla.
 
-------------------------------------------------------------
-Aclaraciones importantes
-------------------------------------------------------------
-1. Orden de ejecución:
-   - Inicia primero la base de datos MySQL, luego la API Flask, y finalmente el main.py.
+### 7️⃣ Entrenamiento del modelo
+Una vez logueado:
+- Usa el botón 🧠 **Entrenar modelo** para crear o actualizar el modelo de correlación.  
+  La primera vez puede tardar **4–5 minutos**.  
+  En ejecuciones posteriores, se carga en segundos.
 
-2. Tiempo de carga inicial:
-   - La primera vez que ejecutes el algoritmo, puede tardar entre 4 y 5 minutos mientras se genera el modelo de correlación.
-   - En ejecuciones posteriores, el tiempo se reduce a segundos.
+### 8️⃣ Obtener recomendaciones
+- Valora varios animes introduciendo su **ID y calificación (1–10)**.
+- Pulsa **✨ Obtener Recomendaciones**.
+- Se mostrarán tus recomendaciones personalizadas con imágenes, sinopsis y puntuaciones obtenidas desde la API pública *Jikan*.
 
-3. Cierre del sistema:
-   - Para detener la API, vuelve a la terminal donde se está ejecutando y presiona Ctrl + C.
+## 🧱 Estructura del proyecto
 
-------------------------------------------------------------
-Estructura del proyecto
-------------------------------------------------------------
-RecomendacionesAnimeAPI (branch Vers_conAPI)
+```
+RecomendacionesAnimeAPI/
 │
 ├── BackEnd/
 │   ├── anime.csv
@@ -100,16 +132,37 @@ RecomendacionesAnimeAPI (branch Vers_conAPI)
 │   ├── Usuario_Contrasenya.py
 │   └── main.py
 │
+├── templates/
+│   └── index.html
+│
+├── static/
+│   └── gif/
+│       ├── entrenando.gif
+│       ├── goku.gif
+│       └── noimage.png
+│
 ├── Documentos/
 │   ├── Diagramas_API_RecomendacionAnimes.png
 │   ├── logins_users_recomendaciones_animes.sql
 │   ├── usuario_contrasenya_base.txt
 │   └── README.txt
 │
-├── static/
-│   └── gif/
-│
-├── templates/
-│   └── index.html
-│
 └── README.md
+```
+
+## 💡 Aclaraciones importantes
+
+1. **Orden de ejecución:**
+   - Arranca primero MySQL.  
+   - Luego ejecuta Flask.  
+   - Finalmente abre la web o el main.py (si usas el cliente de consola).
+
+2. **Tiempo de entrenamiento inicial:**
+   - Puede tardar varios minutos la primera vez.  
+   - En siguientes ejecuciones, se carga el modelo guardado (`modelo_corrMatrix.pkl`).
+
+3. **Mensajes visuales en la web:**
+   - Errores y validaciones se muestran directamente en pantalla (no se usan alertas del navegador).
+
+4. **Cierre del servidor:**
+   - Pulsa `Ctrl + C` en la terminal para detener Flask.

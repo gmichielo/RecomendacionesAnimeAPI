@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, session
 from flask_cors import CORS
 import pickle
 import pandas as pd
@@ -6,19 +6,139 @@ import numpy as np
 import os
 import html
 import random
+import mysql.connector
+import bcrypt
 
 # ===================== CONFIGURACIÓN BASE =====================
 MODEL_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "modelo_corrMatrix.pkl")
-
-# Flask busca automáticamente los templates y los estáticos en carpetas llamadas "templates" y "static"
 base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 app = Flask(__name__, template_folder=os.path.join(base_dir, "templates"), static_folder=os.path.join(base_dir, "static"))
 CORS(app)
+app.secret_key = "clave_super_segura"
 
-vers = "0.0.5"
+vers = "0.0.6"
 corrMatrix = None
 anime = None
 ratings = None
+
+# ===================== CONFIGURACIÓN MYSQL DINÁMICA =====================
+DB_CONFIG = {
+    "host": None,
+    "user": None,
+    "password": None,
+    "database": None
+}
+
+def get_db_connection():
+    try:
+        if not DB_CONFIG["user"]:
+            raise Exception("Configuración MySQL no establecida aún.")
+        conn = mysql.connector.connect(**DB_CONFIG)
+        return conn
+    except Exception as e:
+        print("❌ Error conectando a MySQL:", e)
+        return None
+
+
+@app.route("/set_db_config", methods=["POST"])
+def set_db_config():
+    data = request.get_json()
+    DB_CONFIG["host"] = data.get("host", "localhost")
+    DB_CONFIG["user"] = data.get("user")
+    DB_CONFIG["password"] = data.get("password", "")
+    DB_CONFIG["database"] = data.get("database", "logins_api_anime")
+
+    try:
+        conn = mysql.connector.connect(**DB_CONFIG)
+        conn.close()
+        print(f"✅ Conexión MySQL correcta: {DB_CONFIG['user']}@{DB_CONFIG['host']}")
+        return jsonify({"status": "ok", "message": "Conexión MySQL correcta"})
+    except Exception as e:
+        print("❌ Error conectando a MySQL:", e)
+        return jsonify({"status": "error", "message": str(e)}), 400
+
+
+# =====================================================
+# 🔐 LOGIN Y REGISTRO REALES CON MYSQL
+# =====================================================
+@app.route("/login", methods=["POST"])
+def login():
+    """Valida usuario y contraseña contra la tabla usuario_contrasenyas"""
+    data = request.get_json()
+    usuario = data.get("usuario")
+    contrasenya = data.get("contrasenya")
+
+    if not usuario or not contrasenya:
+        return jsonify({"status": "error", "message": "Campos vacíos"}), 400
+
+    # Conexión MySQL
+    try:
+        conn = mysql.connector.connect(
+            host=DB_CONFIG["host"],
+            user=DB_CONFIG["user"],
+            password=DB_CONFIG["password"],
+            database=DB_CONFIG["database"]
+        )
+    except Exception as e:
+        print("❌ Error de conexión MySQL:", e)
+        return jsonify({"status": "error", "message": "Error conectando a MySQL"}), 500
+
+    cur = conn.cursor(dictionary=True)
+    cur.execute("SELECT contrasenya FROM usuario_contrasenyas WHERE usuario = %s", (usuario,))
+    user = cur.fetchone()
+    cur.close()
+    conn.close()
+
+    if not user:
+        return jsonify({"status": "error", "message": "Usuario no encontrado"}), 401
+
+    hash_guardado = user["contrasenya"]
+
+    if not bcrypt.checkpw(contrasenya.encode("utf-8"), hash_guardado.encode("utf-8")):
+        return jsonify({"status": "error", "message": "Contraseña incorrecta"}), 401
+
+    return jsonify({"status": "ok", "message": f"Bienvenido {usuario}"})
+
+
+@app.route("/register", methods=["POST"])
+def register():
+    """Crea un nuevo usuario en la base de datos"""
+    data = request.get_json()
+    usuario = data.get("usuario")
+    contrasenya = data.get("contrasenya")
+
+    if not usuario or not contrasenya:
+        return jsonify({"status": "error", "message": "Datos incompletos"}), 400
+
+    try:
+        conn = mysql.connector.connect(
+            host=DB_CONFIG["host"],
+            user=DB_CONFIG["user"],
+            password=DB_CONFIG["password"],
+            database=DB_CONFIG["database"]
+        )
+    except Exception as e:
+        print("❌ Error de conexión MySQL:", e)
+        return jsonify({"status": "error", "message": "Error conectando a MySQL"}), 500
+
+    cur = conn.cursor(dictionary=True)
+    cur.execute("SELECT idUsuario_contrasenya FROM usuario_contrasenyas WHERE usuario = %s", (usuario,))
+    if cur.fetchone():
+        cur.close()
+        conn.close()
+        return jsonify({"status": "error", "message": "El usuario ya existe"}), 400
+
+    # ✅ Encriptar la contraseña antes de guardar
+    hash_contra = bcrypt.hashpw(contrasenya.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+
+    cur.execute("INSERT INTO usuario_contrasenyas (usuario, contrasenya) VALUES (%s, %s)", (usuario, hash_contra))
+    conn.commit()
+    cur.close()
+    conn.close()
+
+    print(f"✅ Nuevo usuario registrado: {usuario}")
+    return jsonify({"status": "ok", "message": "Usuario registrado correctamente"})
+
 
 
 # ===================== ENTRENAMIENTO DEL MODELO =====================
@@ -31,16 +151,12 @@ def entrenar_modelo(force=False):
     ratings_file = os.path.join(base_path, "rating.csv")
 
     if not force and os.path.exists(MODEL_FILE):
-        print("\033[36m### Cargando modelo entrenado desde archivo...\033[0m")
         with open(MODEL_FILE, "rb") as f:
             data = pickle.load(f)
             corrMatrix = data["corrMatrix"]
             anime = data["anime"]
             ratings = data["ratings"]
-        print("\033[32m### Modelo cargado correctamente.\033[0m")
         return
-
-    print("\033[33m### Entrenando modelo desde cero...\033[0m")
 
     anime_cols = ['anime_id', 'name', 'genre', 'type', 'episodes', 'rating', 'members']
     ratings_cols = ['user_id', 'anime_id', 'rating']
@@ -78,21 +194,17 @@ def entrenar_modelo(force=False):
 
     corrMatrix = ratings_pivot.corr(method='pearson', min_periods=250)
 
-    print("\033[33m### Guardando modelo entrenado en archivo...\033[0m")
     with open(MODEL_FILE, "wb") as f:
         pickle.dump({
             "corrMatrix": corrMatrix,
             "anime": anime,
             "ratings": ratings
         }, f)
-    print(f"\033[32m### Modelo guardado en {MODEL_FILE}\033[0m")
 
 
-# ===================== ENDPOINTS =====================
-
+# ===================== ENDPOINTS EXISTENTES =====================
 @app.route("/", methods=["GET"])
 def home():
-    """Sirve el index.html principal"""
     return render_template("index.html")
 
 
@@ -109,39 +221,27 @@ def entrenar():
         mensaje = "✅ Modelo cargado o entrenado correctamente"
 
         if request.method == "GET":
-            return f"""
-            <html>
-              <head><title>OtakuDB Entrenamiento</title></head>
-              <body style="background:#0b0d11;color:#e9ecef;font-family:Roboto;text-align:center;padding-top:40px">
-                <h2 style="color:#00b4d8;">{mensaje}</h2>
-                <p>Ahora puedes volver a <a href="/" style="color:#f94144;">OtakuDB</a> y obtener tus recomendaciones ⚡</p>
-              </body>
-            </html>
-            """, 200
+            return f"<h3 style='color:#00b4d8;text-align:center'>{mensaje}</h3>", 200
 
         return jsonify({"mensaje": mensaje}), 200
-
     except Exception as e:
-        import traceback
-        traceback.print_exc()
         return jsonify({"error": f"Error durante el entrenamiento: {str(e)}"}), 500
 
 
 @app.route("/recomendar", methods=["POST"])
 def recomendar():
     global corrMatrix, anime
-
     if corrMatrix is None:
         return jsonify({"error": "El modelo no está entrenado. Llama primero a /entrenar"}), 400
 
     try:
         user_ratings = request.json
         if not user_ratings:
-            return jsonify({"error": "Debes enviar un JSON con las calificaciones del usuario (anime_id: rating)"}), 400
+            return jsonify({"error": "Debes enviar calificaciones"}), 400
 
         available_ids = [int(aid) for aid in user_ratings.keys() if int(aid) in corrMatrix.columns]
         if not available_ids:
-            return jsonify({"error": "Ninguno de los animes enviados está en el modelo"}), 400
+            return jsonify({"error": "Animes no válidos"}), 400
 
         myRatings = pd.Series({int(aid): user_ratings[str(aid)] for aid in available_ids})
 
@@ -155,57 +255,28 @@ def recomendar():
         simCandidates.sort_values(inplace=True, ascending=False)
         filteredSims = simCandidates.drop(myRatings.index, errors='ignore')
 
-        top_recommendations = (
-            filteredSims
-            .head(10)
-            .reset_index()
-            .rename(columns={"index": "anime_id", 0: "puntaje"})
-        )
+        top = filteredSims.head(10).reset_index()
+        top.columns = ["anime_id", "puntaje"]
+        top = top.merge(anime[['anime_id', 'name']], on='anime_id', how='left')
 
-        top_recommendations = top_recommendations.merge(
-            anime[['anime_id', 'name']], on='anime_id', how='left'
-        )
-
-        user_data = (
-            pd.DataFrame({
-                "anime_id": list(map(int, myRatings.index)),
-                "rating": list(myRatings.values)
-            })
-            .merge(anime[['anime_id', 'name']], on='anime_id', how='left')
-        )
-
-        return jsonify({
-            "usuario_ratings": user_data.to_dict(orient='records'),
-            "recomendaciones_top_10": top_recommendations.to_dict(orient='records')
-        }), 200
+        return jsonify({"recomendaciones_top_10": top.to_dict(orient='records')}), 200
 
     except Exception as e:
-        import traceback
-        traceback.print_exc()
         return jsonify({"error": f"Error generando recomendaciones: {str(e)}"}), 500
 
 
 @app.route("/animes", methods=["GET"])
 def obtener_animes():
     global anime, corrMatrix
-
     if anime is None or corrMatrix is None:
         return jsonify({"error": "Los datos no están cargados. Llama primero a /entrenar"}), 400
 
-    try:
-        disponibles = anime[anime['anime_id'].isin(corrMatrix.columns)]
-        sample = disponibles.sample(n=min(100, len(disponibles)), random_state=random.randint(0, 9999))
-        lista = sample[['anime_id', 'name']].values.tolist()
-        return jsonify({"animes": lista}), 200
-
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        return jsonify({"error": f"No se pudieron obtener los animes: {str(e)}"}), 500
+    disponibles = anime[anime['anime_id'].isin(corrMatrix.columns)]
+    sample = disponibles.sample(n=min(100, len(disponibles)), random_state=random.randint(0, 9999))
+    lista = sample[['anime_id', 'name']].values.tolist()
+    return jsonify({"animes": lista}), 200
 
 
-# ===================== MAIN =====================
 if __name__ == "__main__":
-    print("\033[36mServidor Flask del Recomendador de Animes 2000 en ejecución...\033[0m")
-    print("\033[33mAbre tu frontend en el navegador para interactuar: http://localhost:5000\033[0m")
+    print("🚀 Servidor Flask de OtakuDB corriendo en http://localhost:5000")
     app.run(debug=True)

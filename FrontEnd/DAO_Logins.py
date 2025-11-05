@@ -2,106 +2,93 @@ import mysql.connector
 from mysql.connector import Error
 import bcrypt
 
-class DAO_Logins():
-    def __init__(self, user_input: str, password_input: str):
-
-        self.__host = "localhost"
-        self.__user = user_input
-        self.__password = password_input
-        self.__database = "logins_api_anime"
+class DAO_Logins:
+    def __init__(self, db_user="root", db_password="", db_name="logins_api_anime", host="localhost"):
+        self.__db_user = db_user
+        self.__db_password = db_password
+        self.__db_name = db_name
+        self.__host = host
+        self.__conexion = None
+        self.__cursor = None
         self.__conexionHecha = False
-        
-    def get_conexion(self):
-        return self.__conexionHecha
-    
+
     def conectar(self):
+        """Intenta conectar con MySQL"""
         try:
-            self.__mydb = mysql.connector.connect(
+            self.__conexion = mysql.connector.connect(
                 host=self.__host,
-                user=self.__user,
-                password=self.__password,
-                database=self.__database
+                user=self.__db_user,
+                password=self.__db_password,
+                database=self.__db_name
             )
-            self.connected = self.__mydb.is_connected()
-            self.__mycursor = self.__mydb.cursor()
+            self.__cursor = self.__conexion.cursor(dictionary=True)
             self.__conexionHecha = True
-
-        except Error as err:
-            self.__mydb = None
-            self.__mydb = False
-            self.last_error = err
-
-    def close(self):
-        if self.__mydb and self.__mydb.is_connected():
-            self.__mycursor.close()
-            self.__mydb.close()
+            print("✅ Conexión MySQL establecida correctamente.")
+        except Error as e:
+            print(f"❌ Error al conectar con MySQL: {e}")
             self.__conexionHecha = False
 
-    def reconectar(self, user=None, password=None):
-        if user:
-            self.__user = user
-        if password:
-            self.__password = password
-        self.conectar()
-        return self.connected
-    
-    def comprobar_login(self, login):
-        try:
-            sql = "SELECT contrasenya FROM usuario_contrasenyas WHERE usuario = %s"
-            val = (login.get_usuario(), )
-            self.__mycursor.execute(sql, val)
-            resultado = self.__mycursor.fetchone()
+    def get_conexion(self):
+        """Devuelve True si hay conexión activa"""
+        return self.__conexionHecha
 
-            if not resultado:
-                return False
-            
-            # Recuperar el hash almacenado
-            password_hash = resultado[0]
-
-            # Comparar la contraseña ingresada con el hash almacenado
-            return bcrypt.checkpw(login.get_contrasenya().encode(), password_hash.encode())
-
-        except Error as err:
-            print(f"Error al comprobar login: {err}")
-            return False
-        
     def comprobar_usuario(self, login):
+        """Comprueba si el usuario existe en la base de datos"""
+        if not self.__conexionHecha:
+            print("❌ No hay conexión activa con la base de datos.")
+            return False
         try:
             sql = "SELECT usuario FROM usuario_contrasenyas WHERE usuario = %s"
-            val = (login.get_usuario(), )
-            self.__mycursor.execute(sql, val)
-            resultado = self.__mycursor.fetchone()
-
-            # Si hay un resultado, el usuario existe
+            self.__cursor.execute(sql, (login.get_usuario(),))
+            resultado = self.__cursor.fetchone()
             return resultado is not None
-
-        except Error as err:
-            print(f"Error al comprobar usuario: {err}")
+        except Error as e:
+            print(f"❌ Error al comprobar usuario: {e}")
             return False
 
-    def anyadir(self, login):
-        password_hash = bcrypt.hashpw(login.get_contrasenya().encode(), bcrypt.gensalt()).decode()
-        sql = "INSERT INTO usuario_contrasenyas (usuario, contrasenya) VALUES (%s, %s)"
-        val = (login.get_usuario(), password_hash)
-        self.__mycursor.execute(sql, val)
-        self.__mydb.commit()
+    def comprobar_login(self, login):
+        """Valida usuario y contraseña usando bcrypt"""
+        if not self.__conexionHecha:
+            print("❌ No hay conexión activa con la base de datos.")
+            return False
+        try:
+            sql = "SELECT contrasenya FROM usuario_contrasenyas WHERE usuario = %s"
+            self.__cursor.execute(sql, (login.get_usuario(),))
+            resultado = self.__cursor.fetchone()
+            if not resultado:
+                return False
+            hash_guardado = resultado["contrasenya"]
+            return bcrypt.checkpw(login.get_contrasenya().encode('utf-8'), hash_guardado.encode('utf-8'))
+        except Error as e:
+            print(f"❌ Error al comprobar login: {e}")
+            return False
 
-    def ver(self):
-        self.__mycursor.execute("SELECT * FROM usuario_contrasenyas")
-        return self.__mycursor.fetchall()
-    
-    def actualizarContrasenya(self, login):
-        password_hash = bcrypt.hashpw(login.get_contrasenya().encode(), bcrypt.gensalt()).decode()
-        sql = "UPDATE usuario_contrasenyas SET contrasenya = %s WHERE usuario = %s"
-        valores = (password_hash, login.get_usuario())
-        self.__mycursor.execute(sql, valores)
-        self.__mydb.commit()
+    def registrar_usuario(self, login):
+        """Registra un nuevo usuario con contraseña hasheada"""
+        if not self.__conexionHecha:
+            print("❌ No hay conexión activa con la base de datos.")
+            return False
+        try:
+            hash_contra = bcrypt.hashpw(login.get_contrasenya().encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+            sql = "INSERT INTO usuario_contrasenyas (usuario, contrasenya) VALUES (%s, %s)"
+            self.__cursor.execute(sql, (login.get_usuario(), hash_contra))
+            self.__conexion.commit()
+            print("✅ Usuario registrado correctamente.")
+            return True
+        except Error as e:
+            print(f"❌ Error al registrar usuario: {e}")
+            return False
 
-    def actualizarUsuario(self, user_nuevo, login):
-        sql = "UPDATE usuario_contrasenyas SET usuario = %s WHERE usuario = %s"
-        valores = (user_nuevo, login.get_usuario())
-        self.__mycursor.execute(sql, valores)
-        self.__mydb.commit()
+    def ver_todos(self):
+        """Devuelve todos los usuarios registrados"""
+        if not self.__conexionHecha:
+            return []
+        self.__cursor.execute("SELECT * FROM usuario_contrasenyas")
+        return self.__cursor.fetchall()
 
-    def __str__(self):
-        return "DAO de Logins"
+    def close(self):
+        """Cierra la conexión"""
+        if self.__conexionHecha:
+            self.__cursor.close()
+            self.__conexion.close()
+            self.__conexionHecha = False

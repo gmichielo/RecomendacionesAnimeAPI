@@ -177,8 +177,18 @@
   <div class="container">
     <h1 class="title">OTAKU<span style="color:#f94144;">DB</span></h1>
 
+    <!-- CONFIGURAR MYSQL -->
+    <div id="db-config-section">
+      <h5 class="mb-3">🔧 Configuración de base de datos MySQL</h5>
+      <input type="text" id="db-host" class="form-control mb-2" placeholder="Host (localhost)" value="localhost">
+      <input type="text" id="db-user" class="form-control mb-2" placeholder="Usuario MySQL (root)" value="root">
+      <input type="password" id="db-pass" class="form-control mb-2" placeholder="Contraseña MySQL">
+      <input type="text" id="db-name" class="form-control mb-3" placeholder="Base de datos" value="logins_api_anime">
+      <button id="btn-set-db" class="btn btn-main w-100 mb-3">Conectar a MySQL</button>
+    </div>
+
     <!-- LOGIN -->
-    <div id="login-section">
+    <div id="login-section" style="display:none;">
       <p class="text-muted mb-3">👋 Inicia sesión para entrar al mundo otaku.</p>
       <input type="text" id="usuario" class="form-control mb-2" placeholder="Usuario (Ej: Goku)">
       <input type="password" id="password" class="form-control mb-3" placeholder="Contraseña (Ej: Kamehameha!)">
@@ -319,11 +329,119 @@
       $("lista-animes").innerHTML = html;
     }
 
-    $("btn-login").addEventListener("click", async () => {
-      $("login-section").style.display = "none";
-      $("recomendador-section").style.display = "block";
-      await fetchAnimes();
+    // === CONFIGURAR MYSQL ===
+$("btn-set-db").addEventListener("click", async () => {
+  const host = $("db-host").value.trim() || "localhost";
+  const user = $("db-user").value.trim();
+  const password = $("db-pass").value.trim();
+  const database = $("db-name").value.trim() || "logins_api_anime";
+
+  if (!user) return showAlert("Introduce usuario de MySQL", "warning");
+
+  showLoader("Conectando a MySQL...", "default");
+
+  try {
+    const resp = await fetch(`${BASE_URL}/set_db_config`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ host, user, password, database })
     });
+
+    const data = await resp.json();
+    hideLoader();
+
+    if (data.status === "ok") {
+      showAlert("✅ " + data.message, "success");
+      $("db-config-section").style.display = "none";
+      $("login-section").style.display = "block";
+    } else {
+      showAlert("❌ " + data.message, "danger");
+    }
+  } catch {
+    hideLoader();
+    showAlert("Error conectando con el backend", "danger");
+  }
+});
+
+// === LOGIN REAL ===
+$("btn-login").addEventListener("click", async () => {
+  const usuario = $("usuario").value.trim();
+  const password = $("password").value.trim();
+
+  if (!usuario || !password) {
+    showAlert("⚠️ Por favor, completa usuario y contraseña", "warning");
+    return;
+  }
+
+  showLoader("Verificando credenciales...", "default");
+
+  try {
+    const resp = await fetch(`${BASE_URL}/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ usuario, contrasenya: password })
+    });
+
+    const data = await resp.json();
+    hideLoader();
+
+    if (resp.ok && data.status === "ok") {
+      showAlert("✅ " + data.message, "success");
+      // Espera 1 segundo para mostrar visualmente el mensaje antes de avanzar
+      setTimeout(async () => {
+        $("login-section").style.display = "none";
+        $("recomendador-section").style.display = "block";
+        await fetchAnimes();
+      }, 1000);
+    } else {
+      // Mensaje visual de error
+      const msg = data.message || "❌ Usuario o contraseña incorrectos";
+      showAlert(msg, "danger");
+    }
+  } catch (err) {
+    hideLoader();
+    showAlert("❌ Error de conexión con el servidor", "danger");
+    console.error("Error login:", err);
+  }
+});
+
+// === REGISTRO REAL ===
+$("btn-register").addEventListener("click", async () => {
+  const usuario = $("usuario").value.trim();
+  const password = $("password").value.trim();
+
+  if (!usuario || !password) {
+    showAlert("⚠️ Por favor, completa usuario y contraseña", "warning");
+    return;
+  }
+
+  showLoader("Creando usuario...", "default");
+
+  try {
+    const resp = await fetch(`${BASE_URL}/register`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ usuario, contrasenya: password })
+    });
+
+    const data = await resp.json();
+    hideLoader();
+
+    if (data.status === "ok") {
+      showAlert("✅ " + data.message + " Ahora puedes iniciar sesión.", "success");
+      // Limpiar campos
+      $("usuario").value = "";
+      $("password").value = "";
+    } else {
+      showAlert("❌ " + data.message, "danger");
+    }
+  } catch (err) {
+    hideLoader();
+    showAlert("❌ Error conectando al servidor", "danger");
+    console.error("Error register:", err);
+  }
+});
+
 
     $("btn-refresh").addEventListener("click", fetchAnimes);
 
