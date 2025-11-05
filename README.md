@@ -1,64 +1,115 @@
-# API_RecomendacionesAnimes — Proyecto Python + Flask + MySQL
+API_RecomendacionesAnimes — Proyecto Python + Flask + MySQL
+============================================================
 
-**API/Modelo de recomendación de animes con Python y MySQL**
+API / Modelo de recomendación de animes con Python y MySQL
 
-Un Proyecto que combina una API en Flask que crea un modelo de recomendaciones de animes con bases de datos .csv y un programa principal en Python para recomendar los animes ademas de incluir un sistema de logins basico que se guarda en una base de datos SQL 
+Un proyecto que combina una API en Flask que crea un modelo de recomendaciones de animes utilizando bases de datos .csv, junto con un programa principal en Python que permite al usuario obtener recomendaciones personalizadas.
+Además, incluye un sistema básico de logins conectado a una base de datos MySQL.
 
-## Autores:
--Gabriel
--David L
+------------------------------------------------------------
+Autores
+------------------------------------------------------------
+- David López García
+- Gabriel
 
-## Tecnologias Utilizadas:
+------------------------------------------------------------
+Librerias utilizadas
+------------------------------------------------------------
 - Python
 - MySQL
 - API Flask
+- Pandas
+- Numpy
+- Bcrypt
 
-## Requisitos previos:
-Asegúrate de tener instalado: 
-- Python 3.10+
-- MySQL Server 
-- Las siguientes librerias (Instálalas con: pip install + nombre de la libreria):
-   - flask 
-   - mysql-connector-python
-   - pickle
-   - pandas
-   - numpy
-   - os
-   - html
-   - random
+------------------------------------------------------------
+Requisitos previos
+------------------------------------------------------------
+Asegúrate de tener instalado:
 
-## Pasos a seguir:
-0. Obtener y clonar el Repositorio para luego ubicarte en la rama Vers_conAPI
+- Python 3.10 o superior
+- MySQL Server / MySQL Workbench
 
-1. Descarga el DAO de la base de datos correspondiente (logins_api_anime) y guárdalo en tu MySQL. (Carpeta de Documentos)
+Librerías necesarias (instálalas con PIP):
 
-2. Ejecuta el API_RecomendacionesAnimes.py en la consola. Asegúrate de estar en la misma carpeta donde se encuentra el archivo API_RecomendacionesAnimes.py. (O abrirlo y ejecutarlo)
-    Utiliza el siguiente comando en la consola para arrancar la API:
-    flask --app API_RecomendacionesAnimes run
+    pip install flask mysql-connector-python pandas numpy bcrypt
 
-3. Busca y abre el main.py, y ejecuta el código en una terminal dedicada.
+------------------------------------------------------------
+Pasos a seguir
+------------------------------------------------------------
+1. Clonar o descomprimir el repositorio.
+   Descarga el proyecto y ubícate en la rama principal (main) o la carpeta raíz.
 
-4. Sigue las instrucciones del main.
+2. Base de datos MySQL
+   - Descarga el dump de la base de datos:
+     logins_users_recomendaciones_animes.sql
+     (ubicado en la carpeta Documentos)
+   - Ejecútalo en MySQL Workbench para crear la base 'logins_api_anime'.
 
-<Aclaración #1>: Por razones de los software utlizados de primero debes iniciar sesion en la base de datos de MySQL y luego hacer el registro con el login normal
+3. Archivos CSV del modelo
+   - Descarga los datasets necesarios desde Google Drive:
+     https://drive.google.com/drive/folders/19-ttX4RteFSeT0RUCn4AvREzGHLW08ha?usp=drive_link
+   - Colócalos dentro de la carpeta BackEnd.
 
-<Aclaración #2>: Seguramente la primera vez que ejecutes el algoritmo tarde un poco por crearse el modelo aproximadamente de 4 a 5 minutos el resto de veces es apenas en segundos
+4. Iniciar la API Flask
+   Abre una terminal en la carpeta BackEnd y ejecuta:
 
-5. Una vez hayas terminado, vuelve a la terminal donde está corriendo el API_RecomendacionesAnimes.py y presiona Ctrl + C para detener la ejecución de la API.
+       flask --app API_RecomendacionesAnimes run
 
-## Estrutura del proyecto:
-### Animes branch Vers_conAPI
-    - BackEnd
-       - anime.csv
-       - API_RecomendacionesAnimes.py
-       - rating.csv
-    - Documentos
-       - Diagramas_API_RecomendacionAnimes.png
-       - logins_users_recomendaciones_animes.sql
-       - usuario_contrasenya_base.txt
-       - README.txt
-    - FrontEnd
-       - DAO_Logins.py
-       - main.py
-       - Usuario_Contrasenya.py
-    - README.md
+   o alternativamente:
+
+       python API_RecomendacionesAnimes.py
+
+   Esto lanzará la API local en:
+       http://127.0.0.1:5000
+
+5. Ejecutar el programa principal
+   Abre el archivo FrontEnd/main.py y ejecútalo en una terminal aparte:
+
+       python FrontEnd/main.py
+
+6. Iniciar sesión o registrarse
+   - Asegúrate de que MySQL esté iniciado y accesible.
+   - Usa el sistema de login del programa (usuario y contraseña base en Documentos/usuario_contrasenya_base.txt).
+
+------------------------------------------------------------
+Aclaraciones importantes
+------------------------------------------------------------
+1. Orden de ejecución:
+   - Inicia primero la base de datos MySQL, luego la API Flask, y finalmente el main.py.
+
+2. Tiempo de carga inicial:
+   - La primera vez que ejecutes el algoritmo, puede tardar entre 4 y 5 minutos mientras se genera el modelo de correlación.
+   - En ejecuciones posteriores, el tiempo se reduce a segundos.
+
+3. Cierre del sistema:
+   - Para detener la API, vuelve a la terminal donde se está ejecutando y presiona Ctrl + C.
+
+------------------------------------------------------------
+Estructura del proyecto
+------------------------------------------------------------
+RecomendacionesAnimeAPI (branch Vers_conAPI)
+│
+├── BackEnd/
+│   ├── anime.csv
+│   ├── rating.csv
+│   └── API_RecomendacionesAnimes.py
+│
+├── FrontEnd/
+│   ├── DAO_Logins.py
+│   ├── Usuario_Contrasenya.py
+│   └── main.py
+│
+├── Documentos/
+│   ├── Diagramas_API_RecomendacionAnimes.png
+│   ├── logins_users_recomendaciones_animes.sql
+│   ├── usuario_contrasenya_base.txt
+│   └── README.txt
+│
+├── static/
+│   └── gif/
+│
+├── templates/
+│   └── index.html
+│
+└── README.md
