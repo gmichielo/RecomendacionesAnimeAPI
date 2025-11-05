@@ -196,6 +196,9 @@
       <button id="btn-register" class="btn btn-outline-light w-100">Registrarse</button>
     </div>
 
+    <!-- ALERTAS GLOBALES -->
+    <div id="alert-box" class="mb-3"></div>
+
     <!-- RECOMENDADOR -->
     <div id="recomendador-section" style="display:none;">
       <div class="d-flex justify-content-between align-items-center mb-3">
@@ -205,7 +208,6 @@
 
       <input type="text" id="anime-search" class="form-control mb-3" placeholder="🔍 Buscar anime por nombre...">
 
-      <div id="alert-box" class="mb-3"></div>
 
       <!-- Loader -->
       <div id="loader" class="text-center my-3" style="display:none;">
@@ -369,7 +371,7 @@ $("btn-login").addEventListener("click", async () => {
   const password = $("password").value.trim();
 
   if (!usuario || !password) {
-    showAlert("⚠️ Por favor, completa usuario y contraseña", "warning");
+    showAlert("⚠️ Debes completar usuario y contraseña", "warning");
     return;
   }
 
@@ -387,23 +389,24 @@ $("btn-login").addEventListener("click", async () => {
 
     if (resp.ok && data.status === "ok") {
       showAlert("✅ " + data.message, "success");
-      // Espera 1 segundo para mostrar visualmente el mensaje antes de avanzar
       setTimeout(async () => {
         $("login-section").style.display = "none";
         $("recomendador-section").style.display = "block";
         await fetchAnimes();
       }, 1000);
     } else {
-      // Mensaje visual de error
-      const msg = data.message || "❌ Usuario o contraseña incorrectos";
-      showAlert(msg, "danger");
+      // Mostrar mensaje de error según el código
+      if (resp.status === 404) showAlert("❌ Usuario no encontrado", "danger");
+      else if (resp.status === 401) showAlert("❌ Contraseña incorrecta", "danger");
+      else if (resp.status === 400) showAlert("⚠️ " + data.message, "warning");
+      else showAlert("❌ " + (data.message || "Error desconocido"), "danger");
     }
   } catch (err) {
     hideLoader();
     showAlert("❌ Error de conexión con el servidor", "danger");
-    console.error("Error login:", err);
   }
 });
+
 
 // === REGISTRO REAL ===
 $("btn-register").addEventListener("click", async () => {
@@ -427,18 +430,18 @@ $("btn-register").addEventListener("click", async () => {
     const data = await resp.json();
     hideLoader();
 
-    if (data.status === "ok") {
+    if (resp.ok && data.status === "ok") {
       showAlert("✅ " + data.message + " Ahora puedes iniciar sesión.", "success");
-      // Limpiar campos
       $("usuario").value = "";
       $("password").value = "";
     } else {
-      showAlert("❌ " + data.message, "danger");
+      if (resp.status === 409) showAlert("⚠️ El usuario ya existe", "warning");
+      else if (resp.status === 400) showAlert("⚠️ " + data.message, "warning");
+      else showAlert("❌ " + (data.message || "Error al registrar"), "danger");
     }
-  } catch (err) {
+  } catch {
     hideLoader();
     showAlert("❌ Error conectando al servidor", "danger");
-    console.error("Error register:", err);
   }
 });
 

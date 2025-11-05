@@ -63,15 +63,13 @@ def set_db_config():
 # =====================================================
 @app.route("/login", methods=["POST"])
 def login():
-    """Valida usuario y contraseña contra la tabla usuario_contrasenyas"""
     data = request.get_json()
     usuario = data.get("usuario")
     contrasenya = data.get("contrasenya")
 
     if not usuario or not contrasenya:
-        return jsonify({"status": "error", "message": "Campos vacíos"}), 400
+        return jsonify({"status": "error", "message": "Por favor, completa usuario y contraseña"}), 400
 
-    # Conexión MySQL
     try:
         conn = mysql.connector.connect(
             host=DB_CONFIG["host"],
@@ -79,36 +77,34 @@ def login():
             password=DB_CONFIG["password"],
             database=DB_CONFIG["database"]
         )
+        cur = conn.cursor(dictionary=True)
+        cur.execute("SELECT contrasenya FROM usuario_contrasenyas WHERE usuario = %s", (usuario,))
+        user = cur.fetchone()
+        cur.close()
+        conn.close()
     except Exception as e:
         print("❌ Error de conexión MySQL:", e)
-        return jsonify({"status": "error", "message": "Error conectando a MySQL"}), 500
-
-    cur = conn.cursor(dictionary=True)
-    cur.execute("SELECT contrasenya FROM usuario_contrasenyas WHERE usuario = %s", (usuario,))
-    user = cur.fetchone()
-    cur.close()
-    conn.close()
+        return jsonify({"status": "error", "message": "Error conectando a la base de datos"}), 500
 
     if not user:
-        return jsonify({"status": "error", "message": "Usuario no encontrado"}), 401
+        return jsonify({"status": "error", "message": "Usuario no encontrado"}), 404
 
     hash_guardado = user["contrasenya"]
-
     if not bcrypt.checkpw(contrasenya.encode("utf-8"), hash_guardado.encode("utf-8")):
         return jsonify({"status": "error", "message": "Contraseña incorrecta"}), 401
 
-    return jsonify({"status": "ok", "message": f"Bienvenido {usuario}"})
+    return jsonify({"status": "ok", "message": f"Bienvenido {usuario}"}), 200
+
 
 
 @app.route("/register", methods=["POST"])
 def register():
-    """Crea un nuevo usuario en la base de datos"""
     data = request.get_json()
     usuario = data.get("usuario")
     contrasenya = data.get("contrasenya")
 
     if not usuario or not contrasenya:
-        return jsonify({"status": "error", "message": "Datos incompletos"}), 400
+        return jsonify({"status": "error", "message": "Por favor, completa todos los campos"}), 400
 
     try:
         conn = mysql.connector.connect(
@@ -117,27 +113,23 @@ def register():
             password=DB_CONFIG["password"],
             database=DB_CONFIG["database"]
         )
-    except Exception as e:
-        print("❌ Error de conexión MySQL:", e)
-        return jsonify({"status": "error", "message": "Error conectando a MySQL"}), 500
+        cur = conn.cursor(dictionary=True)
+        cur.execute("SELECT idUsuario_contrasenya FROM usuario_contrasenyas WHERE usuario = %s", (usuario,))
+        if cur.fetchone():
+            cur.close()
+            conn.close()
+            return jsonify({"status": "error", "message": "El usuario ya existe"}), 409
 
-    cur = conn.cursor(dictionary=True)
-    cur.execute("SELECT idUsuario_contrasenya FROM usuario_contrasenyas WHERE usuario = %s", (usuario,))
-    if cur.fetchone():
+        hash_contra = bcrypt.hashpw(contrasenya.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+        cur.execute("INSERT INTO usuario_contrasenyas (usuario, contrasenya) VALUES (%s, %s)", (usuario, hash_contra))
+        conn.commit()
         cur.close()
         conn.close()
-        return jsonify({"status": "error", "message": "El usuario ya existe"}), 400
 
-    # ✅ Encriptar la contraseña antes de guardar
-    hash_contra = bcrypt.hashpw(contrasenya.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
-
-    cur.execute("INSERT INTO usuario_contrasenyas (usuario, contrasenya) VALUES (%s, %s)", (usuario, hash_contra))
-    conn.commit()
-    cur.close()
-    conn.close()
-
-    print(f"✅ Nuevo usuario registrado: {usuario}")
-    return jsonify({"status": "ok", "message": "Usuario registrado correctamente"})
+        return jsonify({"status": "ok", "message": "Usuario registrado correctamente"}), 201
+    except Exception as e:
+        print("❌ Error al registrar:", e)
+        return jsonify({"status": "error", "message": "Error registrando el usuario"}), 500
 
 
 
