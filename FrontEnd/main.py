@@ -3,7 +3,7 @@ import re
 import os
 import time
 from DAO_Logins import DAO_Logins
-from Usuario_Contrasenya import Usuario_Contrasenya
+from Login import Login
 
 CANTIDAD_ERRORES = 2
 LARGO_OPCIONES_LOGIN = 2
@@ -226,7 +226,7 @@ while accion_usuario != 0 and DAO_logins!= None and DAO_logins.get_conexion() ==
         usuario_AN = pedir_texto("Introduce tu usuario por favor: ")
         contrasenya_AN = pedir_contrasenya("Introduce tu contraseña por favor: ")
         
-        usuario_API= Usuario_Contrasenya(usuario_AN,contrasenya_AN)
+        usuario_API= Login(usuario_AN,contrasenya_AN)
 
         verif_u = verificar_usuario_correcta(usuario_API)
         verif_c = verificar_contrasenya_correcta(usuario_API)
@@ -244,7 +244,7 @@ while accion_usuario != 0 and DAO_logins!= None and DAO_logins.get_conexion() ==
     if accion_usuario == 2:
         accion_nombre_registro = input("Introduce tu nombre de usuario: ")
         indexErrors = 0
-        verificacion_usuario = Usuario_Contrasenya(accion_nombre_registro,"123456")
+        verificacion_usuario = Login(accion_nombre_registro,"123456")
 
         while (
             (accion_nombre_registro.isdigit() 
@@ -254,7 +254,7 @@ while accion_usuario != 0 and DAO_logins!= None and DAO_logins.get_conexion() ==
             ):
             indexErrors += 1
             accion_nombre_registro = input("\033[31mNombre no válido, elige uno nuevo: \033[0m")
-            verificacion_usuario = Usuario_Contrasenya(accion_nombre_registro,"123456")
+            verificacion_usuario = Login(accion_nombre_registro,"123456")
             if indexErrors >= CANTIDAD_ERRORES: break
         
         if indexErrors >= CANTIDAD_ERRORES: 
@@ -275,7 +275,7 @@ while accion_usuario != 0 and DAO_logins!= None and DAO_logins.get_conexion() ==
             print("\n\033[31mCantidad de errores alcanzados\033[0m\n")
             continue
 
-        nuevo_usuario = Usuario_Contrasenya(accion_nombre_registro, accion_contrasenya_registro)
+        nuevo_usuario = Login(accion_nombre_registro, accion_contrasenya_registro)
         DAO_logins.anyadir(nuevo_usuario)
         
         print(f"\n\033[32mNuevo usuario creado\033[0m")

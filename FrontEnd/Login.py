@@ -1,4 +1,4 @@
-class Usuario_Contrasenya():
+class Login():
 
     def __init__(self, usuario, contrasenya):
         self.__usuario = usuario
