@@ -22,11 +22,12 @@ Asegúrate de tener instalado:
    - mysql-connector-python
    - pandas
    - numpy
+   - bcrypt
 
 ## Pasos a seguir:
 0. Obtener y clonar el Repositorio para luego ubicarte en la rama main
 
-1. Descarga el DUMP de la base de datos correspondiente (BD = logins_api_anime) y ejecutalo en tu MySQL Workbench (Carpeta de Documentos: logins_users_recomendaciones_animes)
+1. Descarga el DUMP de la base de datos correspondiente (BD = logins_api_anime) y ejecutalo en tu MySQL Workbench (Carpeta de Documentos: logins_users_recomendaciones_animes) y descargar los .csv nesesacios (https://drive.google.com/drive/folders/19-ttX4RteFSeT0RUCn4AvREzGHLW08ha?usp=drive_link) para colocarlos en la carpeta de BackEnd
 
 2. Ejecuta el API_RecomendacionesAnimes.py en la consola. Asegúrate de estar en la misma carpeta donde se encuentra el archivo API_RecomendacionesAnimes.py. (O abrirlo y ejecutarlo)
     Utiliza el siguiente comando en la consola para arrancar la API:
