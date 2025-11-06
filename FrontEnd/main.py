@@ -287,8 +287,8 @@ while accion_usuario != 0 and DAO_logins!= None and DAO_logins.get_conexion() ==
 
 if DAO_logins.get_conexion() == True and login_hecho == True:
     # Entrenar (solo la primera vez)
-    resp = req.post(f"{BASE_URL}/entrenar")
-    print(f"\n\033[32mCargando algoritmo...\033[0m")
+    # resp = req.post(f"{BASE_URL}/entrenar")
+    print(f"\n\033[32mCargando programa...\033[0m")
     print(goku)
 
 ###     Seccion Recomendaciones
